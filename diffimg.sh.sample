@@ -1,0 +1,36 @@
+#! /bin/bash
+
+SERVERPATH="/var/www/html/LOCALDIRECTORY" # Add the base directory of the tree you want to go through here.
+FILES=(`find $SERVERPATH | grep .*\.file`)
+ENTRY=""
+LISTFILE="images.txt"
+FILE_1=""
+FILE_2=""
+
+declare -A HASHES_1
+declare -A HASHES_2
+
+# create arrays of md5 hashes
+
+for ENTRY in ${FILES[@]} ; do
+    HASHES_1[$ENTRY]=`md5sum -t $ENTRY | awk '{print $1}'`
+    HASHES_2[$ENTRY]=`md5sum -t $ENTRY | awk '{print $1}'`
+done
+
+# loop through file list
+for (( I=0; $I < ${#FILES[@]}; I+=1 )); do
+    FILE_1=${FILES[$I]}
+    # for each hash, compare with the rest of the list
+    for (( J=0; $J < ${#HASHES_2[@]}; J+=1 )); do
+        FILE_2=${FILES[$J]}
+        # if it matches and isn't the same entry
+        if [[ ${HASHES_1[$FILE_1]} == ${HASHES_2[$FILE_2]} && $I -ne $J ]] ; then
+            # echo the indices
+            echo $I $J
+            # echo the file name and hash for both files
+            echo $FILE_1 ${HASHES_1[$FILE_1]} $FILE_2 ${HASHES_2[$FILE_2]}
+            # clear the entry from the second list of hashes
+            HASHES_2[$FILE_2]=""
+        fi
+    done
+done
